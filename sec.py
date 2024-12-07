@@ -48,13 +48,10 @@ def scrape_documents(page, csv_file_path, url_type):
     for i in range(document_count):
         document_link = document_links.nth(i)
         file_name = document_link.get_attribute('data-file-name')
-        file_txt_name_selector = "a.preview-file"
-        file_txt_name = page.locator(file_txt_name_selector).nth(i).text_content().strip()
         file_number_selector = "td.file-num a"
         file_number = page.locator(file_number_selector).nth(i).text_content().strip()
         incorporate_selector = "td.incorporated"
         incorporate = page.locator(incorporate_selector).nth(i).text_content().strip()
-
         adsh = document_link.get_attribute('data-adsh')
         date_selector = "td.enddate"
         entity_selector = "td.entity-name"
@@ -70,11 +67,7 @@ def scrape_documents(page, csv_file_path, url_type):
         cik_number_selector = "td.cik"
         cik_number = page.locator(cik_number_selector).nth(i).text_content().strip()
         
-        entity_name_clean = entity_name.replace("/", "-").replace(":", "-").replace(" ", "_") 
-        location_clean = location.replace("/", "-").replace(":", "-").replace(" ", "_")
-        directory_name = f""  #want to add name here according to url type such as 10-Q, 10-K, 8-Q
         
-        print(f"Processing document: {file_name} (ADSH: {adsh}, Directory: {directory_name})")
         directory_name = url_type
         directory_path = os.path.join("sec_gov", directory_name)
         os.makedirs(directory_path, exist_ok=True)
@@ -105,6 +98,7 @@ def scrape_documents(page, csv_file_path, url_type):
         print(f"Document saved as {pdf_path}")
         document_page.close()
         print(f"Closed the document tab for {file_name}")
+        file_txt_name = url_type
         write_to_csv(csv_file_path, pdf_path, file_txt_name, filed, end_date, entity_name, cik_number, location, incorporate, file_number, film_number)
 
 def scrape_url(page, url, csv_file_path, url_type):
@@ -145,14 +139,17 @@ def click_checkboxes_on_all_urls():
             '10-Q': [
                 "https://www.sec.gov/edgar/search/#/q=oil&dateRange=custom&startdt=2023-12-01&enddt=2024-12-01&filter_forms=10-Q",
                 "https://www.sec.gov/edgar/search/#/q=oil&dateRange=custom&startdt=2022-12-01&enddt=2023-12-01&filter_forms=10-Q",
+                "https://www.sec.gov/edgar/search/#/q=oil&dateRange=custom&startdt=2021-12-01&enddt=2022-12-01&filter_forms=10-Q",
             ],
             '10-K': [
                 "https://www.sec.gov/edgar/search/#/q=oil&dateRange=custom&startdt=2023-12-01&enddt=2024-12-01&filter_forms=10-K",
                 "https://www.sec.gov/edgar/search/#/q=oil&dateRange=custom&startdt=2022-12-01&enddt=2023-12-01&filter_forms=10-K",
+                "https://www.sec.gov/edgar/search/#/q=oil&dateRange=custom&startdt=2021-12-01&enddt=2022-12-01&filter_forms=10-K",
             ],
             '8-K': [
                 "https://www.sec.gov/edgar/search/#/q=oil&dateRange=custom&startdt=2023-12-01&enddt=2024-12-01&filter_forms=8-K",
                 "https://www.sec.gov/edgar/search/#/q=oil&dateRange=custom&startdt=2022-12-01&enddt=2023-12-01&filter_forms=8-K",
+                "https://www.sec.gov/edgar/search/#/q=oil&dateRange=custom&startdt=2021-12-01&enddt=2022-12-01&filter_forms=8-K",
             ]
         }
 
