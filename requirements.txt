@@ -2,6 +2,7 @@ bcc==0.18.0
 blinker==1.4
 Brlapi==0.8.3
 certifi==2020.6.20
+cffi==1.17.1
 chardet==4.0.0
 chrome-gnome-shell==0.0.0
 click==8.0.3
@@ -12,6 +13,7 @@ cupshelpers==1.0
 dbus-python==1.2.18
 defer==1.0.6
 distro==1.7.0
+greenlet==3.1.1
 hidpidaemon==18.4.6
 httplib2==0.20.2
 idna==3.3
@@ -28,11 +30,14 @@ more-itertools==8.10.0
 netaddr==0.8.0
 netifaces==0.11.0
 oauthlib==3.2.0
+playwright==1.49.0
 pop-transition==1.1.2
 protobuf==3.12.4
 pycairo==1.20.1
+pycparser==2.22
 pycups==2.0.1
 pydbus==0.6.0
+pyee==12.0.0
 PyGObject==3.42.1
 PyJWT==2.3.0
 pymacaroons==0.13.0
@@ -53,6 +58,7 @@ SecretStorage==3.3.1
 sessioninstaller==0.0.0
 six==1.16.0
 systemd-python==234
+typing_extensions==4.12.2
 ubuntu-drivers-common==0.0.0
 ufw==0.36.1
 urllib3==1.26.5
