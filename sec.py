@@ -22,13 +22,16 @@ def check_checkboxes(page):
     selectors = ["input#col-cik", "input#col-located",
                 "input#col-incorporated", "input#col-file-num",
                 "input#col-film-num", "input#col-filed"]
-    
-    for selector in selectors:
-        page.wait_for_selector(selector)
-        checkbox = page.locator(selector)
-        checkbox.scroll_into_view_if_needed()
-        if not checkbox.is_checked():
-            checkbox.click(force=True)
+    try:
+        for selector in selectors:
+            page.wait_for_selector(selector)
+            checkbox = page.locator(selector)
+            if checkbox.is_visible():
+                checkbox.scroll_into_view_if_needed()
+                if not checkbox.is_checked():
+                    checkbox.click(force=True)
+    except Exception as e:
+        print(f"Error processing checkbox {selector}: {e}")
 
     page.wait_for_timeout(2000)
 
@@ -115,16 +118,10 @@ def scrape_url(page, url, csv_file_path, url_type):
                 if "No results found for your search!" in no_results_text:
                     print("No results found. Moving to next url please wait!")
                     break
-            check_checkboxes(page) 
-            scrape_documents(page, csv_file_path, url_type)
-            
-            next_button_selector = "a.page-link[data-value='nextPage']"
-            next_button = page.locator(next_button_selector)
-            if next_button and next_button.is_visible() and next_button.is_enabled():
-                page_number += 1
             else:
-                print("No more pages to navigate. Exiting loop.")
-                break
+                check_checkboxes(page) 
+                scrape_documents(page, csv_file_path, url_type)
+                page_number += 1
             
         except Exception as e:
             print(f"Failed to scrape page {page_number} of URL: {paginated_url}. Error: {e}")
