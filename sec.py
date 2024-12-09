@@ -74,8 +74,7 @@ def _get_document_details(page, csv_file_path, url_type):
             details["entity_name"], details["cik_number"], details["location"],
             details["incorporate"], details["file_number"], details["film_number"]
         )
-       
-
+    
 def scrape_document(page, url_type, document_link, details):
     """Process and save a single document."""
     directory_path = os.path.join("sec_gov", url_type)
@@ -96,7 +95,6 @@ def scrape_document(page, url_type, document_link, details):
         except Exception as e:
             print(f"No modal found or failed to close modal: {e}")
 
-            #saving pdf section
 #    page.wait_for_timeout(2000)
     document_page = popup_info.value
     document_page.wait_for_load_state("domcontentloaded", timeout=30000)
