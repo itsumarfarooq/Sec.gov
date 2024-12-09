@@ -103,12 +103,18 @@ def scrape_documents(page, csv_file_path, url_type):
 
 def scrape_url(page, url, csv_file_path, url_type):
     """Scrape a specific URL, iterating through its pages."""
-    page_number = 1 
-    while page_number <= 10:
+    page_number = 1
+    while page_number:
         paginated_url = f"{url}&page={page_number}"
         print(f"Scraping page {page_number} of URL: {paginated_url}")
         try:
             page.goto(paginated_url, wait_until="domcontentloaded", timeout=60000)
+            no_results_selector = "div.col-sm-12[role='alert'] h4.text-center"
+            if page.locator(no_results_selector).is_visible():
+                no_results_text = page.locator(no_results_selector).text_content()
+                if "No results found for your search!" in no_results_text:
+                    print("No results found. Moving to next url please wait!")
+                    break
             check_checkboxes(page) 
             scrape_documents(page, csv_file_path, url_type)
             
