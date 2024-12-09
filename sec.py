@@ -8,7 +8,7 @@ def write_csv_headers(file_path):
             writer = csv.writer(file)
             writer.writerow([
                 'file_path', 'form_file_name', 'filed', 'reporting_for', 'filing_entity_person', 'cik', 
-                'located', 'incorporated', 'file_number', 'film_number'
+                'located', 'incorporated', 'file_number', 'firm_number'
             ])
 
 def write_to_csv(file_path, form_file_name, filed, reporting_for, entity_name, cik, located, incorporated, file_number, film_number, pdf_path):
@@ -35,10 +35,10 @@ def check_checkboxes(page):
 
     page.wait_for_timeout(2000)
 
-def scrape_documents(page, csv_file_path, url_type):
+def _get_document_details(page, csv_file_path, url_type):
+    document_record = 0
     """Scrape documents on the current page after ensuring checkboxes are clicked."""
     check_checkboxes(page)
-    
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
     link_selector = "a.preview-file[data-file-name]"
     page.wait_for_selector(link_selector)
@@ -49,60 +49,63 @@ def scrape_documents(page, csv_file_path, url_type):
     print(f"Number of document links found: {document_count}")
 
     for i in range(document_count):
+        # Extract metadata for each document
         document_link = document_links.nth(i)
-        file_name = document_link.get_attribute('data-file-name')
-        file_number_selector = "td.file-num a"
-        file_number = page.locator(file_number_selector).nth(i).text_content().strip()
-        incorporate_selector = "td.incorporated"
-        incorporate = page.locator(incorporate_selector).nth(i).text_content().strip()
-        adsh = document_link.get_attribute('data-adsh')
-        date_selector = "td.enddate"
-        entity_selector = "td.entity-name"
-        location_selector = "td.biz-location.located"
-        filed_selector = f"input#col-filed:nth-of-type({i+1})" 
-        filed_selector = "td.filed"
-        filed = page.locator(filed_selector).nth(i).text_content().strip()     
-        end_date = page.locator(date_selector).nth(i).text_content().strip()
-        entity_name = page.locator(entity_selector).nth(i).text_content().strip()
-        location = page.locator(location_selector).nth(i).text_content().strip()
-        film_number_selector = "td.film-num"
-        film_number = page.locator(film_number_selector).nth(i).text_content().strip()
-        cik_number_selector = "td.cik"
-        cik_number = page.locator(cik_number_selector).nth(i).text_content().strip()
-        
-        
-        directory_name = url_type
-        directory_path = os.path.join("sec_gov", directory_name)
-        os.makedirs(directory_path, exist_ok=True)
-        
-        print(f"Processing document: {file_name} (ADSH: {adsh}, Film Number: {film_number})")
+        details = {
+            "file_name": document_link.get_attribute('data-file-name'),
+            "adsh": document_link.get_attribute('data-adsh'),
+            "file_number": page.locator("td.file-num a").nth(i).text_content().strip(),
+            "incorporate": page.locator("td.incorporated").nth(i).text_content().strip(),
+            "filed": page.locator("td.filed").nth(i).text_content().strip(),
+            "end_date": page.locator("td.enddate").nth(i).text_content().strip(),
+            "entity_name": page.locator("td.entity-name").nth(i).text_content().strip(),
+            "location": page.locator("td.biz-location.located").nth(i).text_content().strip(),
+            "film_number": page.locator("td.film-num").nth(i).text_content().strip(),
+            "cik_number": page.locator("td.cik").nth(i).text_content().strip(),
+        }
 
-        document_link.click()
-        print(f"Clicked the link for {file_name}")
+        # Process the document
+        pdf_path = scrape_document(page, url_type, document_link, details)
 
-        with page.expect_popup(timeout=60000) as popup_info:
-            button_selector = "button.btn.btn-warning:has-text('Open document')"
-            page.wait_for_selector(button_selector)
-            button = page.locator(button_selector)
-            button.click()
-            print(f"Clicked the 'Open document' button for {file_name} successfully!")
-            try:
-                close_button_selector = "#close-modal"
-                page.locator(close_button_selector).click()
-            except Exception as e:
-                print(f"No modal found or failed to close modal: {e}")
+        # Save metadata to CSV
+        write_to_csv(
+            csv_file_path, 
+            pdf_path, url_type, details["filed"], details["end_date"],
+            details["entity_name"], details["cik_number"], details["location"],
+            details["incorporate"], details["file_number"], details["film_number"]
+        )
+       
+
+def scrape_document(page, url_type, document_link, details):
+    """Process and save a single document."""
+    directory_path = os.path.join("sec_gov", url_type)
+    os.makedirs(directory_path, exist_ok=True)
+
+    pdf_path = os.path.join(directory_path, f"{details['file_number']}_{details['film_number']}.pdf")
+    print(f"Processing document: {details['file_name']} (ADSH: {details['adsh']}, Film Number: {details['film_number']})")
+    document_link.click()
+    print(f"Clicked the link for {details['file_name']}")
+
+    with page.expect_popup(timeout=60000) as popup_info:
+        button_selector = "button.btn.btn-warning:has-text('Open document')"
+        page.wait_for_selector(button_selector)
+        page.locator(button_selector).click()
+        print(f"Clicked the 'Open document' button for {details['file_name']} successfully!")
+        try:
+            page.locator("#close-modal").click()
+        except Exception as e:
+            print(f"No modal found or failed to close modal: {e}")
+
+            #saving pdf section
+    document_page = popup_info.value
+    document_page.wait_for_load_state("domcontentloaded", timeout=30000)
+    document_page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+    document_page.pdf(path=pdf_path)
+    print(f"Document saved as {pdf_path}")
+    document_page.close()
+
+    return pdf_path
         
-        document_page = popup_info.value
-        document_page.wait_for_load_state("domcontentloaded", timeout=30000)
-        document_page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        
-        pdf_path = os.path.join(directory_path, f"{file_number}_{film_number}.pdf")
-        document_page.pdf(path=pdf_path)
-        print(f"Document saved as {pdf_path}")
-        document_page.close()
-        print(f"Closed the document tab for {file_name}")
-        file_txt_name = url_type
-        write_to_csv(csv_file_path, pdf_path, file_txt_name, filed, end_date, entity_name, cik_number, location, incorporate, file_number, film_number)
 
 def scrape_url(page, url, csv_file_path, url_type):
     """Scrape a specific URL, iterating through its pages."""
@@ -120,7 +123,7 @@ def scrape_url(page, url, csv_file_path, url_type):
                     break
             else:
                 check_checkboxes(page) 
-                scrape_documents(page, csv_file_path, url_type)
+                _get_document_details(page, csv_file_path, url_type)
                 page_number += 1
             
         except Exception as e:
@@ -129,7 +132,7 @@ def scrape_url(page, url, csv_file_path, url_type):
 
 def click_checkboxes_on_all_urls():
     """Scrape all URLs, visiting pages for each URL."""
-    csv_file_path = 'scraped_documents.csv'
+    csv_file_path = 'Master_file.csv'
     write_csv_headers(csv_file_path)
     directory_path = "sec_gov"
     try:
