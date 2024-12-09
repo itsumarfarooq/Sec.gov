@@ -97,11 +97,13 @@ def scrape_document(page, url_type, document_link, details):
             print(f"No modal found or failed to close modal: {e}")
 
             #saving pdf section
+#    page.wait_for_timeout(2000)
     document_page = popup_info.value
     document_page.wait_for_load_state("domcontentloaded", timeout=30000)
     document_page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
     document_page.pdf(path=pdf_path)
     print(f"Document saved as {pdf_path}")
+#    page.wait_for_timeout(2000)
     document_page.close()
 
     return pdf_path
@@ -115,12 +117,12 @@ def scrape_url(page, url, csv_file_path, url_type):
         print(f"Scraping page {page_number} of URL: {paginated_url}")
         try:
             page.goto(paginated_url, wait_until="domcontentloaded", timeout=60000)
-            no_results_selector = "div.col-sm-12[role='alert'] h4.text-center"
-            if page.locator(no_results_selector).is_visible():
-                no_results_text = page.locator(no_results_selector).text_content()
-                if "No results found for your search!" in no_results_text:
-                    print("No results found. Moving to next url please wait!")
-                    break
+            print("Please wait for 10 seconds next page is loading!")
+            page.wait_for_timeout(10000) 
+            #TO check if next the page is available or empty
+            if not page.locator('th#filetype.filetype[style=""]:has-text("Form & File")').is_visible():
+                print("No results found!. Moving to next url")
+                break
             else:
                 check_checkboxes(page) 
                 _get_document_details(page, csv_file_path, url_type)
